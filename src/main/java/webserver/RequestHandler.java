@@ -2,7 +2,6 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.Buffer;
 import java.nio.file.Files;
 
 import org.slf4j.Logger;
@@ -25,23 +24,9 @@ public class RequestHandler extends Thread {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
 
             BufferedReader bs = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-
-            String line;
-            String reqUri = null;
-            int i = 0;
-
-            while((line = bs.readLine()) != null && !line.equals("")) {
-                log.debug(line);
-
-                if(i == 0) {
-                    reqUri = line.split(" ")[1];
-                }
-
-                i++;
-            }
+            byte[] body = getResponseBody(bs);
 
             DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = Files.readAllBytes(new File("./webapp" + reqUri).toPath());
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
@@ -67,5 +52,21 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private byte[] getResponseBody(BufferedReader bs) throws IOException {
+        String request = getRequestString(bs);
+        return Files.readAllBytes(new File("./webapp" + request.split(" ")[1]).toPath());
+    }
+
+    private String getRequestString(BufferedReader bs) throws IOException {
+        String request = null;
+        String line;
+
+        while((line = bs.readLine()) != null && !line.equals("")) {
+            request += line;
+        }
+
+        return request;
     }
 }
