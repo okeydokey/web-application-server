@@ -4,8 +4,10 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 
+import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.HttpRequestUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -56,17 +58,27 @@ public class RequestHandler extends Thread {
 
     private byte[] getResponseBody(BufferedReader bs) throws IOException {
         String request = getRequestString(bs);
-        return Files.readAllBytes(new File("./webapp" + request.split(" ")[1]).toPath());
+
+        String requestUri = request.split(" ")[1];
+        String[] requestSplit = requestUri.split("[?]");
+        String requestParam = requestSplit.length > 0 ? requestSplit[1] : "";
+        requestUri = requestSplit[0];
+
+        User user = new User(HttpRequestUtils.parseQueryString(requestParam));
+        System.out.println(user);
+
+        requestUri = requestUri.equals("/") ? "/index.html" : requestUri;
+        return Files.readAllBytes(new File("./webapp" + requestUri).toPath());
     }
 
     private String getRequestString(BufferedReader bs) throws IOException {
-        String request = null;
+        String request = "";
         String line;
 
         while((line = bs.readLine()) != null && !line.equals("")) {
             request += line;
         }
-
+        System.out.println(request);
         return request;
     }
 }
