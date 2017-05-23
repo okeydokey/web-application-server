@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 
-import model.HttpRequest;
+import model.HttpRequestUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.IOUtils;
@@ -60,9 +60,9 @@ public class RequestHandler extends Thread {
         String request = IOUtils.bufferedReaderToString(bs);
 
         if(!request.isEmpty()) {
-            HttpRequest httpRequest = new HttpRequest(request.split(" ")[1]);
+            HttpRequestUri httpRequestUri = HttpRequestUri.create(request.split(" ")[1]);
 
-            String requestPath = httpRequest.getPath();
+            String requestPath = httpRequestUri.getPath();
 
             requestPath = requestPath.equals("/") ? "/index.html" : requestPath;
             return Files.readAllBytes(new File("./webapp" + requestPath).toPath());
