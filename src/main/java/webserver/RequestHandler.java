@@ -4,10 +4,10 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 
-import model.User;
+import model.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -57,28 +57,20 @@ public class RequestHandler extends Thread {
     }
 
     private byte[] getResponseBody(BufferedReader bs) throws IOException {
-        String request = getRequestString(bs);
+        String request = IOUtils.bufferedReaderToString(bs);
 
-        String requestUri = request.split(" ")[1];
-        String[] requestSplit = requestUri.split("[?]");
-        String requestParam = requestSplit.length > 0 ? requestSplit[1] : "";
-        requestUri = requestSplit[0];
+        if(!request.isEmpty()) {
+            HttpRequest httpRequest = new HttpRequest(request.split(" ")[1]);
 
-        User user = new User(HttpRequestUtils.parseQueryString(requestParam));
-        System.out.println(user);
+            String requestPath = httpRequest.getPath();
 
-        requestUri = requestUri.equals("/") ? "/index.html" : requestUri;
-        return Files.readAllBytes(new File("./webapp" + requestUri).toPath());
-    }
-
-    private String getRequestString(BufferedReader bs) throws IOException {
-        String request = "";
-        String line;
-
-        while((line = bs.readLine()) != null && !line.equals("")) {
-            request += line;
+            requestPath = requestPath.equals("/") ? "/index.html" : requestPath;
+            return Files.readAllBytes(new File("./webapp" + requestPath).toPath());
+        } else {
+            // empty request
+            log.debug("empty request!");
+            return new byte[0];
         }
-        System.out.println(request);
-        return request;
+
     }
 }

@@ -17,4 +17,22 @@ public class IOUtils {
         br.read(body, 0, contentLength);
         return String.copyValueOf(body);
     }
+
+    /**
+     * BufferedReader를 String으로 변환
+     * @param bs
+     *              String으로 변환할 BufferedReader
+     * @return
+     * @throws IOException
+     */
+    public static String bufferedReaderToString(BufferedReader bs) throws IOException {
+        String request = "";
+        String line;
+
+        while((line = bs.readLine()) != null && !line.equals("")) {
+            request += line;
+        }
+
+        return request;
+    }
 }

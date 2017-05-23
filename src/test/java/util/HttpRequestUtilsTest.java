@@ -3,6 +3,7 @@ package util;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
+import java.io.*;
 import java.util.Map;
 
 import org.junit.Test;
@@ -10,6 +11,7 @@ import org.junit.Test;
 import util.HttpRequestUtils.Pair;
 
 public class HttpRequestUtilsTest {
+
     @Test
     public void parseQueryString() {
         String queryString = "userId=javajigi";
