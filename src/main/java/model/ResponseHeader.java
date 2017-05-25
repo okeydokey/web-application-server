@@ -14,7 +14,7 @@ public class ResponseHeader {
 
     private Map<String, String> data = new HashMap<>();
 
-    public void setHeader(String key, String value) {
+    public void addHeader(String key, String value) {
         int index = list.stream().map(String::toUpperCase).collect(Collectors.toList()).indexOf(key.toUpperCase());
 
         if(index != -1) {

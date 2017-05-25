@@ -105,7 +105,6 @@ public class RequestHandler extends Thread {
 
             }
 
-
         } catch (IOException e) {
             log.error(e.getMessage());
         }
