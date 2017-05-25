@@ -13,15 +13,6 @@ public class IOUtilsTest {
     private static final Logger logger = LoggerFactory.getLogger(IOUtilsTest.class);
 
     @Test
-    public void bufferedReaderToString() throws IOException {
-        String data = "GET /index.html HTTP/1.1";
-        StringReader sr = new StringReader(data);
-        BufferedReader br = new BufferedReader(sr);
-        String result = IOUtils.bufferedReaderToString(br);
-        assertThat(result, is(data));
-    }
-
-    @Test
     public void readData() throws Exception {
         String data = "abcd123";
         StringReader sr = new StringReader(data);

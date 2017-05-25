@@ -1,5 +1,7 @@
 package util;
 
+import model.HttpRequest;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 
@@ -18,21 +20,4 @@ public class IOUtils {
         return String.copyValueOf(body);
     }
 
-    /**
-     * BufferedReader를 String으로 변환
-     * @param bs
-     *              String으로 변환할 BufferedReader
-     * @return
-     * @throws IOException
-     */
-    public static String bufferedReaderToString(BufferedReader bs) throws IOException {
-        String request = "";
-        String line;
-
-        while((line = bs.readLine()) != null && !line.equals("")) {
-            request += line;
-        }
-
-        return request;
-    }
 }
