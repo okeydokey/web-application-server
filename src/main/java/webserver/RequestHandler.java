@@ -2,32 +2,26 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
 
+import controller.UserController;
 import model.HttpRequest;
 import model.ResponseHeader;
-import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.UserService;
-import util.HttpRequestUtils;
-import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
-    UserService userService = new UserService();
+    UserController userController = new UserController(new UserService(), new ResponseHandler());
+
+    ResponseHandler responseHandler = new ResponseHandler();
 
     private Socket connection;
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
     }
-
-
 
     public void run() {
         log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
@@ -38,71 +32,16 @@ public class RequestHandler extends Thread {
 
             BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
 
-            HttpRequest httpRequest = HttpRequest.create(br);
+            HttpRequest httpRequest = HttpRequest.from(br);
 
             log.debug("httpRequest : {} ", httpRequest.toString());
 
-            String requestPath = httpRequest.getPath();
-
             DataOutputStream dos = new DataOutputStream(out);
 
-            if(httpRequest.getAccept().indexOf("text/css") != -1) {
-
-                byte[] body = getResponseBody(requestPath);
-
-                responseHeader(dos, new ResponseHeader()
-                        .setHttpStatus(200)
-                        .setContentType("text/css;charset=utf-8")
-                        .setContentLength(body.length));
-
-                responseBody(dos, body);
-
-            } else if(requestPath.equals("/user/create")) {
-
-                userService.create(new User(HttpRequestUtils.parseQueryString(httpRequest.getQueryString())));
-
-                responseHeader(dos, new ResponseHeader()
-                        .setHttpStatus(302)
-                        .setLocation("/"));
-
-            } else if(requestPath.equals("/user/login")) {
-
-                boolean loginYn = userService.login(new User(HttpRequestUtils.parseQueryString(httpRequest.getQueryString())));
-
-                responseHeader(dos, new ResponseHeader()
-                        .setHttpStatus(200)
-                        .setContentType("text/html;charset=utf-8")
-                        .setSetCookie("logined=" + loginYn));
-
-            } else if(requestPath.equals("/user/list.html")) {
-
-                if(!Boolean.parseBoolean(httpRequest.getCookie().get("logined"))) {
-                    responseHeader(dos, new ResponseHeader()
-                            .setHttpStatus(302)
-                            .setLocation("/user/login.html"));
-                } else {
-                    Map<String, String> mapper = new HashMap<>();
-                    mapper.put("{{list}}", userService.list());
-                    byte[] body = getResponseBody(requestPath, mapper);
-
-                    responseHeader(dos, new ResponseHeader()
-                            .setHttpStatus(200)
-                            .setContentType("text/html;charset=utf-8")
-                            .setContentLength(body.length));
-
-                    responseBody(dos, body);
-                }
-
+            if(isCss(httpRequest)) {
+                responseHandler.responseCss(dos, httpRequest.getPath());
             } else {
-
-                byte[] body = getResponseBody(requestPath);
-
-                responseHeader(dos, new ResponseHeader()
-                        .setHttpStatus(200)
-                        .setContentType("text/html;charset=utf-8")
-                        .setContentLength(body.length));
-                responseBody(dos, body);
-
+                requestMapping(dos, httpRequest);
             }
 
         } catch (IOException e) {
@@ -110,48 +49,43 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void responseHeader(DataOutputStream dos, ResponseHeader responseHeader) {
-        try {
-            dos.writeBytes(responseHeader.getResponseHeader());
-        } catch (IOException e) {
-            log.error(e.getMessage());
+    /**
+     * 요청 URL에 따라 Controller 매핑
+     * @param dos
+     * @param httpRequest
+     * @throws IOException
+     */
+    private void requestMapping(DataOutputStream dos, HttpRequest httpRequest) throws IOException {
+
+        String requestPath = httpRequest.getPath();
+
+        if(requestPath.equals("/user/from")) {
+
+            userController.create(dos, httpRequest);
+
+        } else if(requestPath.equals("/user/login")) {
+
+            userController.login(dos, httpRequest);
+
+        } else if(requestPath.equals("/user/list.html")) {
+
+            userController.list(dos, httpRequest);
+
+        } else {
+
+            byte[] body = responseHandler.getResponseBody(requestPath);
+
+            responseHandler.response(dos, new ResponseHeader()
+                    .setHttpStatus(200)
+                    .setContentType("text/html;charset=utf-8")
+                    .setContentLength(body.length), body);
+
         }
     }
 
-    private void responseBody(DataOutputStream dos, byte[] body) {
-        try {
-            dos.write(body, 0, body.length);
-            dos.flush();
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
+    private boolean isCss(HttpRequest httpRequest) {
+        return httpRequest.getAccept().indexOf("text/css") != -1;
     }
 
-    private byte[] getResponseBody(String path, Map<String, String> mapper) throws IOException {
-        String requestPath = path.equals("/") ? "/index.html" : path;
 
-        byte[] result = Files.readAllBytes(new File("./webapp" + requestPath).toPath());
-
-        if(hasMapper(mapper)) {
-            String responseBody = new String(result, StandardCharsets.UTF_8);
-
-            log.debug("before mapper : {} ", responseBody);
-            for(String key : mapper.keySet()) {
-                responseBody = responseBody.replace(key, mapper.get(key));
-            }
-
-            log.debug("after mapper : {} ", responseBody);
-            result = responseBody.getBytes();
-        }
-
-        return result;
-    }
-
-    private boolean hasMapper(Map<String, String> mapper) {
-        return !(mapper == null || mapper.size() == 0);
-    }
-
-    private byte[] getResponseBody(String path) throws IOException {
-        return getResponseBody(path, null);
-    }
 }

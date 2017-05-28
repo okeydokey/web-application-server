@@ -22,7 +22,7 @@ public class HttpRequestTest {
                 "Connection: keep-alive" + System.getProperty("line.separator") +
                 "Accept: */*"));
 
-        HttpRequest httpRequest = HttpRequest.create(br);
+        HttpRequest httpRequest = HttpRequest.from(br);
         assertThat(httpRequest.getPath(), is("/"));
         assertThat(httpRequest.getQueryString(), is(""));
 
@@ -36,21 +36,21 @@ public class HttpRequestTest {
         cookie.put("logined", "true");
         cookie.put("user", "yhkim");
 
-        httpRequest = HttpRequest.create(br);
+        httpRequest = HttpRequest.from(br);
         assertThat(httpRequest.getPath(), is("/index.html"));
         assertThat(httpRequest.getQueryString(), is(""));
         assertThat(httpRequest.getCookie(), is(cookie));
 
-        br = new BufferedReader(new StringReader("GET /user/create?userId=javajigi&password=password HTTP/1.1" + System.getProperty("line.separator") +
+        br = new BufferedReader(new StringReader("GET /user/from?userId=javajigi&password=password HTTP/1.1" + System.getProperty("line.separator") +
                 "Host: localhost:8080" + System.getProperty("line.separator") +
                 "Connection: keep-alive" + System.getProperty("line.separator") +
                 "Accept: */*"));
 
-        httpRequest = HttpRequest.create(br);
-        assertThat(httpRequest.getPath(), is("/user/create"));
+        httpRequest = HttpRequest.from(br);
+        assertThat(httpRequest.getPath(), is("/user/from"));
         assertThat(httpRequest.getQueryString(), is("userId=javajigi&password=password"));
 
-        br = new BufferedReader(new StringReader("POST /user/create HTTP/1.1" + System.getProperty("line.separator") +
+        br = new BufferedReader(new StringReader("POST /user/from HTTP/1.1" + System.getProperty("line.separator") +
                 "Host: localhost:8080" + System.getProperty("line.separator") +
                 "Connection: keep-alive" + System.getProperty("line.separator") +
                 "Content-Length: 46" + System.getProperty("line.separator") +
@@ -58,8 +58,8 @@ public class HttpRequestTest {
                 System.getProperty("line.separator") +
                 "userId=javajigi&password=password&name=JaeSung"));
 
-        httpRequest = HttpRequest.create(br);
-        assertThat(httpRequest.getPath(), is("/user/create"));
+        httpRequest = HttpRequest.from(br);
+        assertThat(httpRequest.getPath(), is("/user/from"));
         assertThat(httpRequest.getQueryString(), is("userId=javajigi&password=password&name=JaeSung"));
     }
 

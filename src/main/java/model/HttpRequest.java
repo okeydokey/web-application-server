@@ -1,7 +1,6 @@
 package model;
 
 import org.jooq.lambda.tuple.Tuple2;
-import org.jooq.lambda.tuple.Tuple3;
 import org.jooq.lambda.tuple.Tuple4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import java.util.Map;
 /**
  * Created by yunheekim on 2017. 5. 23..
  */
+
 public class HttpRequest {
 
     private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
@@ -31,7 +31,7 @@ public class HttpRequest {
 
     }
 
-    public static HttpRequest create(BufferedReader br) throws IOException {
+    public static HttpRequest from(BufferedReader br) throws IOException {
         HttpRequest httpRequest = new HttpRequest();
 
         Tuple4<String, String, String, String> request = parseRequest(br);
@@ -120,12 +120,15 @@ public class HttpRequest {
 
     public Map<String, String> getCookie() { return cookie; }
 
-    public String getAccept() {return accept;}
+    public String getAccept() { return accept; }
+
     @Override
     public String toString() {
         return "HttpRequest{" +
                 "path='" + path + '\'' +
                 ", queryString='" + queryString + '\'' +
+                ", accept='" + accept + '\'' +
+                ", cookie=" + cookie +
                 '}';
     }
 }

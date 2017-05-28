@@ -4,10 +4,7 @@ import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import webserver.RequestHandler;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -30,16 +27,11 @@ public class UserService {
         return loginUser.getPassword().equals(user.getPassword());
     }
 
-//    <tr>
-//       <th scope="row">1</th> <td>javajigi</td> <td>자바지기</td> <td>javajigi@sample.net</td><td><a href="#" class="btn btn-success" role="button">수정</a></td>
-//    </tr>
-
     public String list() {
 
         StringBuilder sb = new StringBuilder();
 
         AtomicInteger atomicInteger = new AtomicInteger(1);
-
 
         DataBase.findAll().stream().forEach(u -> {
             sb.append("<tr>");
