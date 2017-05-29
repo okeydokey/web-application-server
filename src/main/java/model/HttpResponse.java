@@ -1,18 +1,25 @@
 package model;
 
+import java.io.OutputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Created by yunheekim on 2017. 5. 25..
  */
-public class ResponseHeader {
+public class HttpResponse {
 
-    HttpStatus httpStatus;
+    private OutputStream os;
 
-    List<String> list = Arrays.asList(new String[]{"Content-Type", "Content-Length", "Location", "Set-Cookie"});
+    private HttpStatus httpStatus;
+
+    private List<String> list = Arrays.asList(new String[]{"Content-Type", "Content-Length", "Location", "Set-Cookie"});
 
     private Map<String, String> data = new HashMap<>();
+
+    public HttpResponse(OutputStream os) {
+        this.os = os;
+    }
 
     public void addHeader(String key, String value) {
         int index = list.stream().map(String::toUpperCase).collect(Collectors.toList()).indexOf(key.toUpperCase());
@@ -24,33 +31,33 @@ public class ResponseHeader {
         data.put(key, value);
     }
 
-    public ResponseHeader setHttpStatus(int code) {
+    public HttpResponse setHttpStatus(int code) {
         httpStatus = HttpStatus.getHttpStatus(code);
         return this;
     }
 
-    public ResponseHeader setContentType(String value) {
+    public HttpResponse setContentType(String value) {
         data.put("Content-Type", value);
         return this;
     }
 
-    public ResponseHeader setContentLength(int value) {
+    public HttpResponse setContentLength(int value) {
         data.put("Content-Length", String.valueOf(value));
         return this;
     }
 
-    public ResponseHeader setLocation(String value) {
+    public HttpResponse setLocation(String value) {
         data.put("Location", value);
         return this;
     }
 
     // TODO Cookie 여러개 추가 가능하도록 수정
-    public ResponseHeader setSetCookie(String value) {
+    public HttpResponse setSetCookie(String value) {
         data.put("Set-Cookie", value);
         return this;
     }
 
-    public String getResponseHeader() {
+    public byte[] getResponseHeader() {
         StringBuilder sb = new StringBuilder();
         sb.append("HTTP/1.1 ");
         sb.append(httpStatus.getCode());
@@ -67,7 +74,11 @@ public class ResponseHeader {
 
         sb.append("\r\n");
 
-        return sb.toString();
+        return sb.toString().getBytes();
+    }
+
+    public OutputStream getOutputStream() {
+        return os;
     }
 
     public enum HttpStatus {

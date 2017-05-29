@@ -1,11 +1,10 @@
 package webserver;
 
 import model.HttpRequest;
-import model.ResponseHeader;
+import model.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,51 +19,67 @@ public class ResponseHandler {
 
     /**
      * css 응답
-     * @param dos
+     * @param httpResponse
      * @param requestPath
      * @throws IOException
      */
-    public void responseCss(DataOutputStream dos, String requestPath) throws IOException {
+    public void forwardCss(HttpResponse httpResponse, String requestPath) throws IOException {
         byte[] body = getResponseBody(requestPath);
 
-        response(dos, new ResponseHeader()
+        forward(httpResponse, body, "text/css;charset=utf-8");
+    }
+
+    public void forward(HttpResponse httpResponse, String requestPath) throws IOException {
+        byte[] body = getResponseBody(requestPath);
+
+        forward(httpResponse, body, "text/html;charset=utf-8");
+    }
+
+    public void forward(HttpResponse httpResponse, String requestPath, Map<String, String> mapper) throws IOException {
+        byte[] body = getResponseBody(requestPath, mapper);
+
+        forward(httpResponse, body, "text/html;charset=utf-8");
+    }
+
+    private void forward(HttpResponse httpResponse, byte[] body, String contentType) {
+        response(httpResponse
                 .setHttpStatus(200)
-                .setContentType("text/css;charset=utf-8")
+                .setContentType(contentType)
                 .setContentLength(body.length), body);
     }
 
-    public void response(DataOutputStream dos, ResponseHeader responseHeader) {
-        response(dos, responseHeader, null);
+    public void response(HttpResponse httpResponse) {
+        response(httpResponse, null);
     }
 
-    public void response(DataOutputStream dos, ResponseHeader responseHeader, byte[] body) {
-        responseHeader(dos, responseHeader);
+    public void response(HttpResponse httpResponse, byte[] body) {
+        responseHeader(httpResponse);
 
-        if(body != null) responseBody(dos, body);
+        if(body != null) responseBody(httpResponse, body);
     }
 
-    private void responseHeader(DataOutputStream dos, ResponseHeader responseHeader) {
+    private void responseHeader(HttpResponse httpResponse) {
         try {
-            dos.writeBytes(responseHeader.getResponseHeader());
+            httpResponse.getOutputStream().write(httpResponse.getResponseHeader(), 0, (httpResponse.getResponseHeader()).length);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
 
-    private void responseBody(DataOutputStream dos, byte[] body) {
+    private void responseBody(HttpResponse httpResponse, byte[] body) {
         try {
-            dos.write(body, 0, body.length);
-            dos.flush();
+            httpResponse.getOutputStream().write(body, 0, body.length);
+            httpResponse.getOutputStream().flush();
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
 
-    public byte[] getResponseBody(String path) throws IOException {
+    protected byte[] getResponseBody(String path) throws IOException {
         return getResponseBody(path, null);
     }
 
-    public byte[] getResponseBody(String path, Map<String, String> mapper) throws IOException {
+    protected byte[] getResponseBody(String path, Map<String, String> mapper) throws IOException {
         String requestPath = path.equals("/") ? "/index.html" : path;
 
         byte[] result = Files.readAllBytes(new File("./webapp" + requestPath).toPath());
@@ -87,10 +102,10 @@ public class ResponseHandler {
         return result;
     }
 
-    public void goLoginPage(DataOutputStream dos) {
-        response(dos, new ResponseHeader()
+    public void sendRedirect(HttpResponse httpResponse, String location) {
+        response(httpResponse
             .setHttpStatus(302)
-            .setLocation("/user/login.html"));
+            .setLocation(location));
     }
 
     private boolean hasMapper(Map<String, String> mapper) {

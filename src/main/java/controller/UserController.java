@@ -1,13 +1,11 @@
 package controller;
 
 import model.HttpRequest;
-import model.ResponseHeader;
+import model.HttpResponse;
 import model.User;
 import service.UserService;
-import util.HttpRequestUtils;
 import webserver.ResponseHandler;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,55 +24,53 @@ public class UserController {
 
     /**
      * User 생성
-     * @param dos
      * @param httpRequest
+     * @param httpResponse
      */
-    public void create(DataOutputStream dos, HttpRequest httpRequest) {
-        userService.create(new User(HttpRequestUtils.parseQueryString(httpRequest.getQueryString())));
+    public void create(HttpRequest httpRequest, HttpResponse httpResponse) {
+        userService.create(new User(httpRequest.getParams()));
 
-        responseHandler.response(dos, new ResponseHeader()
-                .setHttpStatus(302)
-                .setLocation("/"));
+        responseHandler.sendRedirect(httpResponse, "/");
     }
 
     /**
      * User 로그인
-     * @param dos
      * @param httpRequest
+     * @param httpResponse
      */
-    public void login(DataOutputStream dos, HttpRequest httpRequest) {
-        boolean loginYn = userService.login(new User(HttpRequestUtils.parseQueryString(httpRequest.getQueryString())));
+    public void login(HttpRequest httpRequest, HttpResponse httpResponse) throws IOException {
+        boolean loginYn = userService.login(new User(httpRequest.getParams()));
 
-        responseHandler.response(dos, new ResponseHeader()
-                .setHttpStatus(200)
-                .setContentType("text/html;charset=utf-8")
-                .setSetCookie("logined=" + loginYn));
+        if(!loginYn) {
+            responseHandler.forward(httpResponse, "/user/login_failed.html");
+        }
+
+        responseHandler.response(httpResponse
+            .setHttpStatus(200)
+            .setContentType("text/html;charset=utf-8")
+            .setSetCookie("logined=" + loginYn));
     }
 
     /**
      * User 리스트
-     * @param dos
      * @param httpRequest
+     * @param httpResponse
      * @throws IOException
      */
-    public void list(DataOutputStream dos, HttpRequest httpRequest) throws IOException {
-        if(!isLogined(httpRequest)) {
-            responseHandler.goLoginPage(dos);
+    public void list(HttpRequest httpRequest, HttpResponse httpResponse) throws IOException {
+        if(!isLogin(httpRequest)) {
+            responseHandler.sendRedirect(httpResponse, "/user/login.html");
         } else {
             Map<String, String> mapper = new HashMap<>();
             mapper.put("{{list}}", userService.list());
-            byte[] body = responseHandler.getResponseBody(httpRequest.getPath(), mapper);
 
-            responseHandler.response(dos, new ResponseHeader()
-                    .setHttpStatus(200)
-                    .setContentType("text/html;charset=utf-8")
-                    .setContentLength(body.length), body);
+            responseHandler.forward(httpResponse, httpRequest.getPath(), mapper);
         }
     }
 
 
 
-    private boolean isLogined(HttpRequest httpRequest) {
+    private boolean isLogin(HttpRequest httpRequest) {
         return Boolean.parseBoolean(httpRequest.getCookie().get("logined"));
     }
 }

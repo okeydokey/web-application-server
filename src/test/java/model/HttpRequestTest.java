@@ -23,8 +23,12 @@ public class HttpRequestTest {
                 "Accept: */*"));
 
         HttpRequest httpRequest = HttpRequest.from(br);
+        assertThat(httpRequest.getMethod(), is("GET"));
         assertThat(httpRequest.getPath(), is("/"));
         assertThat(httpRequest.getQueryString(), is(""));
+        assertThat(httpRequest.getHeader("Connection"), is("keep-alive"));
+        assertThat(httpRequest.getHeader("Host"), is("localhost:8080"));
+        assertThat(httpRequest.getHeader("Accept"), is("*/*"));
 
         br = new BufferedReader(new StringReader("GET /index.html HTTP/1.1" + System.getProperty("line.separator") +
                 "Host: localhost:8080" + System.getProperty("line.separator") +
@@ -37,6 +41,7 @@ public class HttpRequestTest {
         cookie.put("user", "yhkim");
 
         httpRequest = HttpRequest.from(br);
+        assertThat(httpRequest.getMethod(), is("GET"));
         assertThat(httpRequest.getPath(), is("/index.html"));
         assertThat(httpRequest.getQueryString(), is(""));
         assertThat(httpRequest.getCookie(), is(cookie));
@@ -47,8 +52,10 @@ public class HttpRequestTest {
                 "Accept: */*"));
 
         httpRequest = HttpRequest.from(br);
+        assertThat(httpRequest.getMethod(), is("GET"));
         assertThat(httpRequest.getPath(), is("/user/from"));
         assertThat(httpRequest.getQueryString(), is("userId=javajigi&password=password"));
+        assertThat(httpRequest.getParameter("userId"), is("javajigi"));
 
         br = new BufferedReader(new StringReader("POST /user/from HTTP/1.1" + System.getProperty("line.separator") +
                 "Host: localhost:8080" + System.getProperty("line.separator") +
@@ -59,8 +66,10 @@ public class HttpRequestTest {
                 "userId=javajigi&password=password&name=JaeSung"));
 
         httpRequest = HttpRequest.from(br);
+        assertThat(httpRequest.getMethod(), is("POST"));
         assertThat(httpRequest.getPath(), is("/user/from"));
         assertThat(httpRequest.getQueryString(), is("userId=javajigi&password=password&name=JaeSung"));
+        assertThat(httpRequest.getParameter("userId"), is("javajigi"));
     }
 
 }

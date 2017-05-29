@@ -5,7 +5,7 @@ import java.net.Socket;
 
 import controller.UserController;
 import model.HttpRequest;
-import model.ResponseHeader;
+import model.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.UserService;
@@ -38,10 +38,11 @@ public class RequestHandler extends Thread {
 
             DataOutputStream dos = new DataOutputStream(out);
 
+            HttpResponse httpResponse = new HttpResponse(dos);
             if(isCss(httpRequest)) {
-                responseHandler.responseCss(dos, httpRequest.getPath());
+                responseHandler.forwardCss(httpResponse, httpRequest.getPath());
             } else {
-                requestMapping(dos, httpRequest);
+                requestMapping(httpRequest, httpResponse);
             }
 
         } catch (IOException e) {
@@ -51,40 +52,35 @@ public class RequestHandler extends Thread {
 
     /**
      * 요청 URL에 따라 Controller 매핑
-     * @param dos
      * @param httpRequest
+     * @param httpResponse
      * @throws IOException
      */
-    private void requestMapping(DataOutputStream dos, HttpRequest httpRequest) throws IOException {
+    protected void requestMapping(HttpRequest httpRequest, HttpResponse httpResponse) throws IOException {
 
         String requestPath = httpRequest.getPath();
 
-        if(requestPath.equals("/user/from")) {
+        if(requestPath.equals("/user/create")) {
 
-            userController.create(dos, httpRequest);
+            userController.create(httpRequest, httpResponse);
 
         } else if(requestPath.equals("/user/login")) {
 
-            userController.login(dos, httpRequest);
+            userController.login(httpRequest, httpResponse);
 
         } else if(requestPath.equals("/user/list.html")) {
 
-            userController.list(dos, httpRequest);
+            userController.list(httpRequest, httpResponse);
 
         } else {
 
-            byte[] body = responseHandler.getResponseBody(requestPath);
-
-            responseHandler.response(dos, new ResponseHeader()
-                    .setHttpStatus(200)
-                    .setContentType("text/html;charset=utf-8")
-                    .setContentLength(body.length), body);
+            responseHandler.forward(httpResponse, requestPath);
 
         }
     }
 
     private boolean isCss(HttpRequest httpRequest) {
-        return httpRequest.getAccept().indexOf("text/css") != -1;
+        return httpRequest.getHeader("Accept").indexOf("text/css") != -1;
     }
 
 
