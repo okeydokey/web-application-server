@@ -2,8 +2,10 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
-import controller.UserController;
+import controller.*;
 import model.HttpRequest;
 import model.HttpResponse;
 import org.slf4j.Logger;
@@ -11,9 +13,15 @@ import org.slf4j.LoggerFactory;
 import service.UserService;
 
 public class RequestHandler extends Thread {
-    private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
+    private static Map<String, Controller> controllers = new HashMap<>();
 
-    UserController userController = new UserController(new UserService(), new ResponseHandler());
+    static {
+        controllers.put("/user/create", new CreateUserController(new UserService(), new ResponseHandler()));
+        controllers.put("/user/login", new LoginController(new UserService(), new ResponseHandler()));
+        controllers.put("/user/list.html", new ListUserController(new UserService(), new ResponseHandler()));
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
     ResponseHandler responseHandler = new ResponseHandler();
 
@@ -60,17 +68,11 @@ public class RequestHandler extends Thread {
 
         String requestPath = httpRequest.getPath();
 
-        if(requestPath.equals("/user/create")) {
+        Controller controller = controllers.get(requestPath);
 
-            userController.create(httpRequest, httpResponse);
+        if(controller != null) {
 
-        } else if(requestPath.equals("/user/login")) {
-
-            userController.login(httpRequest, httpResponse);
-
-        } else if(requestPath.equals("/user/list.html")) {
-
-            userController.list(httpRequest, httpResponse);
+            controller.service(httpRequest, httpResponse);
 
         } else {
 
