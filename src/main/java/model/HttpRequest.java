@@ -8,9 +8,7 @@ import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
 import util.IOUtils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,11 +21,10 @@ public class HttpRequest {
 
     private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
 
-    private String method;
+    private HttpMethod method;
     private String path;
-    private String queryString;
 
-    private Map<String, String> headerMap;
+    private Map<String, String> headers;
 
     private Map<String, String> cookie;
     private Map<String, String> params;
@@ -36,15 +33,17 @@ public class HttpRequest {
 
     }
 
-    public static HttpRequest from(BufferedReader br) throws IOException {
-        HttpRequest httpRequest = new HttpRequest();
+    public static HttpRequest from(InputStream in) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
 
         Tuple3<String, String, Map<String, String>> request = parseRequest(br);
+
+        HttpRequest httpRequest = new HttpRequest();
 
         String header = request.v1();
         String body = request.v2();
 
-        httpRequest.headerMap = request.v3();
+        httpRequest.headers = request.v3();
         httpRequest.cookie = HttpRequestUtils.parseCookies(request.v3().get("Cookie"));
 
         String[] requestSplit = header.split(" ");
@@ -52,19 +51,18 @@ public class HttpRequest {
         String method = requestSplit[0];
         String httpRequestUri = requestSplit[1];
 
-        httpRequest.method = method;
+        httpRequest.method = HttpMethod.getHttpMethod(method);
 
-        Tuple2<String, String> pathAndQueryString = getPathAndQueryString(method, httpRequestUri, body);
+        Tuple2<String, Map<String, String>> pathAndQueryString = getPathAndParams(method, httpRequestUri, body);
 
         httpRequest.path = pathAndQueryString.v1();
-        httpRequest.queryString = pathAndQueryString.v2();
-        httpRequest.params = HttpRequestUtils.parseQueryString(httpRequest.getQueryString());
+        httpRequest.params = pathAndQueryString.v2();
 
         return httpRequest;
 
     }
 
-    private static Tuple2<String, String> getPathAndQueryString(String method, String httpRequestUri, String body) throws UnsupportedEncodingException {
+    private static Tuple2<String, Map<String, String>> getPathAndParams(String method, String httpRequestUri, String body) throws UnsupportedEncodingException {
 
         String path = "";
         String queryString = "";
@@ -86,7 +84,7 @@ public class HttpRequest {
             //TODO method 별 특성 파악 필요
         }
 
-        return new Tuple2<>(path, queryString);
+        return new Tuple2<>(path, HttpRequestUtils.parseQueryString(queryString));
     }
 
     private static Tuple3<String, String, Map<String, String>> parseRequest(BufferedReader br) throws IOException {
@@ -120,23 +118,52 @@ public class HttpRequest {
         return path;
     }
 
-    public String getQueryString() {
-        return queryString;
-    }
-
     public Map<String, String> getCookie() { return cookie; }
 
     public Map<String, String> getParams() { return params; }
 
-    public String getMethod() {
+    public HttpMethod getMethod() {
         return method;
     }
 
     public String getHeader(String key) {
-        return headerMap.get(key);
+        return headers.get(key);
     }
 
     public String getParameter(String key) {
         return params.get(key);
+    }
+
+    public enum HttpMethod {
+        GET("GET"),
+        POST("POST");
+
+        String name;
+
+        HttpMethod(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public boolean isGet() {
+            return this == GET;
+        }
+
+        public boolean isPost() {
+            return this == POST;
+        }
+
+        public static HttpMethod getHttpMethod(String name) {
+            for (HttpMethod httpMethod : HttpMethod.values()) {
+                if(httpMethod.getName().equals(name)) {
+                    return httpMethod;
+                }
+            }
+
+            return null;
+        }
     }
 }

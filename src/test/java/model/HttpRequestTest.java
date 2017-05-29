@@ -1,9 +1,9 @@
 package model;
 
+import com.google.common.collect.Maps;
 import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,58 +17,67 @@ public class HttpRequestTest {
     @Test
     public void create() throws Exception {
 
-        BufferedReader br = new BufferedReader(new StringReader("GET / HTTP/1.1" + System.getProperty("line.separator") +
+        InputStream header = new ByteArrayInputStream(("GET / HTTP/1.1" + System.getProperty("line.separator") +
                 "Host: localhost:8080" + System.getProperty("line.separator") +
                 "Connection: keep-alive" + System.getProperty("line.separator") +
-                "Accept: */*"));
+                "Accept: */*").getBytes("UTF-8"));
 
-        HttpRequest httpRequest = HttpRequest.from(br);
-        assertThat(httpRequest.getMethod(), is("GET"));
+        HttpRequest httpRequest = HttpRequest.from(header);
+        assertThat(httpRequest.getMethod(), is(HttpRequest.HttpMethod.GET));
         assertThat(httpRequest.getPath(), is("/"));
-        assertThat(httpRequest.getQueryString(), is(""));
+        assertThat(httpRequest.getParams(), is(Maps.newHashMap()));
         assertThat(httpRequest.getHeader("Connection"), is("keep-alive"));
         assertThat(httpRequest.getHeader("Host"), is("localhost:8080"));
         assertThat(httpRequest.getHeader("Accept"), is("*/*"));
 
-        br = new BufferedReader(new StringReader("GET /index.html HTTP/1.1" + System.getProperty("line.separator") +
+        header = new ByteArrayInputStream(("GET /index.html HTTP/1.1" + System.getProperty("line.separator") +
                 "Host: localhost:8080" + System.getProperty("line.separator") +
                 "Connection: keep-alive" + System.getProperty("line.separator") +
                 "Cookie: logined=true;user=yhkim" + System.getProperty("line.separator") +
-                "Accept: */*"));
+                "Accept: */*").getBytes("UTF-8"));
 
         Map<String, String> cookie = new HashMap<>();
         cookie.put("logined", "true");
         cookie.put("user", "yhkim");
 
-        httpRequest = HttpRequest.from(br);
-        assertThat(httpRequest.getMethod(), is("GET"));
+        httpRequest = HttpRequest.from(header);
+        assertThat(httpRequest.getMethod(), is(HttpRequest.HttpMethod.GET));
         assertThat(httpRequest.getPath(), is("/index.html"));
-        assertThat(httpRequest.getQueryString(), is(""));
+        assertThat(httpRequest.getParams(), is(Maps.newHashMap()));
         assertThat(httpRequest.getCookie(), is(cookie));
 
-        br = new BufferedReader(new StringReader("GET /user/from?userId=javajigi&password=password HTTP/1.1" + System.getProperty("line.separator") +
+        header = new ByteArrayInputStream(("GET /user/from?userId=javajigi&password=password HTTP/1.1" + System.getProperty("line.separator") +
                 "Host: localhost:8080" + System.getProperty("line.separator") +
                 "Connection: keep-alive" + System.getProperty("line.separator") +
-                "Accept: */*"));
+                "Accept: */*").getBytes("UTF-8"));
 
-        httpRequest = HttpRequest.from(br);
-        assertThat(httpRequest.getMethod(), is("GET"));
+        Map<String, String> params = new HashMap<>();
+        params.put("userId", "javajigi");
+        params.put("password", "password");
+
+        httpRequest = HttpRequest.from(header);
+        assertThat(httpRequest.getMethod(), is(HttpRequest.HttpMethod.GET));
         assertThat(httpRequest.getPath(), is("/user/from"));
-        assertThat(httpRequest.getQueryString(), is("userId=javajigi&password=password"));
+        assertThat(httpRequest.getParams(), is(params));
         assertThat(httpRequest.getParameter("userId"), is("javajigi"));
 
-        br = new BufferedReader(new StringReader("POST /user/from HTTP/1.1" + System.getProperty("line.separator") +
+        header = new ByteArrayInputStream(("POST /user/from HTTP/1.1" + System.getProperty("line.separator") +
                 "Host: localhost:8080" + System.getProperty("line.separator") +
                 "Connection: keep-alive" + System.getProperty("line.separator") +
                 "Content-Length: 46" + System.getProperty("line.separator") +
                 "Accept: */*" + System.getProperty("line.separator") +
                 System.getProperty("line.separator") +
-                "userId=javajigi&password=password&name=JaeSung"));
+                "userId=javajigi&password=password&name=JaeSung").getBytes("UTF-8"));
 
-        httpRequest = HttpRequest.from(br);
-        assertThat(httpRequest.getMethod(), is("POST"));
+        params = new HashMap<>();
+        params.put("userId", "javajigi");
+        params.put("password", "password");
+        params.put("name", "JaeSung");
+
+        httpRequest = HttpRequest.from(header);
+        assertThat(httpRequest.getMethod(), is(HttpRequest.HttpMethod.POST));
         assertThat(httpRequest.getPath(), is("/user/from"));
-        assertThat(httpRequest.getQueryString(), is("userId=javajigi&password=password&name=JaeSung"));
+        assertThat(httpRequest.getParams(), is(params));
         assertThat(httpRequest.getParameter("userId"), is("javajigi"));
     }
 
